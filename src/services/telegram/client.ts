@@ -231,6 +231,7 @@ export class TelegramService {
     console.log('Remember it — you will need it for future runs.\n');
 
     let chosenPw = '';
+    // eslint-disable-next-line no-constant-condition
     while (true) {
       chosenPw = await promptText('Choose passphrase (min 8 chars): ', { mask: true });
       if (chosenPw.length >= 8) break;

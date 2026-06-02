@@ -126,7 +126,7 @@ echo ""
 echo "  codex"
 echo ""
 echo "Or non-interactive attempt:"
-echo "  codex \"Read MISSION.md and all files under SOURCES/. Produce the report following the exact format in MISSION.\""
+echo '  codex "Read MISSION.md and all files under SOURCES/. Produce the report following the exact format in MISSION."'
 echo ""
 echo "Pack: $(pwd)"
 `;
