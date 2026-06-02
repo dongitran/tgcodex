@@ -1,0 +1,129 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linux-x64
+            node: 20
+            artifact_name: tgcodex-linux-x64
+          - os: ubuntu-latest
+            target: linux-arm64
+            node: 20
+            artifact_name: tgcodex-linux-arm64
+          - os: macos-latest
+            target: macos-arm64
+            node: 20
+            artifact_name: tgcodex-macos-arm64
+          - os: macos-13
+            target: macos-x64
+            node: 20
+            artifact_name: tgcodex-macos-x64
+          - os: windows-latest
+            target: win-x64
+            node: 20
+            artifact_name: tgcodex-win-x64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'pnpm'
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      # Create platform archive with launcher (easy to download and "install")
+      - name: Prepare release artifact (unix)
+        if: matrix.os != 'windows-latest'
+        run: |
+          mkdir -p release-bin
+          cp -r dist release-bin/
+          cat > release-bin/tgcodex << 'EOF'
+#!/usr/bin/env node
+import('../dist/cli.js');
+EOF
+          chmod +x release-bin/tgcodex
+          tar -czvf ${{ matrix.artifact_name }}.tar.gz -C release-bin .
+
+      - name: Prepare release artifact (windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          mkdir -p release-bin
+          cp -r dist release-bin/
+          echo '@echo off' > release-bin/tgcodex.cmd
+          echo 'node "%~dp0\dist\cli.js" %*' >> release-bin/tgcodex.cmd
+          7z a -tzip ${{ matrix.artifact_name }}.zip ./release-bin/*
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_name }}.*
+
+      # Try to produce a more "native" binary using maintained pkg fork (best effort)
+      - name: Try build standalone binary with pkg (best effort)
+        continue-on-error: true
+        run: |
+          npx @yao-pkg/pkg dist/cli.js --target node20-${{ matrix.target }} --output ${{ matrix.artifact_name }} --compress GZip || echo "pkg build skipped or failed for this target (common with certain native deps)"
+
+      - name: Upload pkg binary if produced
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}-pkg
+          path: |
+            ${{ matrix.artifact_name }}*
+          if-no-files-found: ignore
+
+  create-release:
+    needs: release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create GitHub Release + upload assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: tgcodex ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            artifacts/**/*.tar.gz
+            artifacts/**/*.zip
+            artifacts/**/tgcodex*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
