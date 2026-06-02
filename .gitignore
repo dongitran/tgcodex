@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+
+# Build
+dist/
+*.tsbuildinfo
+
+# Sensitive (never commit)
+*.db
+*.db-shm
+*.db-wal
+.tg-codex*
+config.json
+session*
+*-session*
+.env*
+.secrets*
+
+# Research packs (user data)
+tg-codex-research/
+research-packs/
+tmp-research-*/
+
+# Logs & reports
+*.log
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
+*.sublime-*
+
+# pnpm / npm
+.pnpm-debug.log*
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
