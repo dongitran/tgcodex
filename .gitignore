@@ -37,6 +37,6 @@ test-results/
 
 # pnpm / npm
 .pnpm-debug.log*
-pnpm-lock.yaml
 package-lock.json
 yarn.lock
+# Note: pnpm-lock.yaml is committed for reproducible installs (important for CLI releases)
