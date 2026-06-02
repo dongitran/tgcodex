@@ -1,6 +1,6 @@
 {
   "name": "tgcodex",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Turn your Telegram groups into an AI-powered personal knowledge base. Professional CLI + beautiful TUI powered by OpenAI Codex (or Claude, Gemini, etc).",
   "type": "module",
   "main": "dist/cli.js",
